@@ -324,7 +324,3 @@ docs/PROJECT_DOCUMENTATION.md
 # Author
 
 Krishna Kala
-
-GitHub:
-https://github.com/krishnakala987-byte/KubeIntel-AI-Platform1
-
