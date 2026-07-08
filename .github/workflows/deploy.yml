@@ -55,7 +55,6 @@ jobs:
         run: |
           docker build -t $ECR_REGISTRY/kubeops-ui:$IMAGE_TAG services/kubeops-ui/
           docker push $ECR_REGISTRY/kubeops-ui:$IMAGE_TAG
-
   deploy:
     name: Deploy to EKS
     runs-on: ubuntu-latest
@@ -67,10 +66,23 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-      - run: aws eks update-kubeconfig --name kubeintel-cluster --region $AWS_REGION
-      - run: |
+      - name: Check whether the EKS cluster is up
+        id: cluster
+        run: |
+          STATUS=$(aws eks describe-cluster --name kubeintel-cluster --region $AWS_REGION --query 'cluster.status' --output text 2>/dev/null || echo "OFFLINE")
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          if [ "$STATUS" = "ACTIVE" ]; then
+            echo "Cluster is ACTIVE - proceeding with deployment."
+          else
+            echo "::notice title=Deploy skipped::EKS cluster is offline - it is torn down when not in use to control AWS cost (see README). Deployment steps skipped."
+          fi
+      - name: Update kubeconfig
+        if: steps.cluster.outputs.status == 'ACTIVE'
+        run: aws eks update-kubeconfig --name kubeintel-cluster --region $AWS_REGION
+      - name: Deploy and verify rollout
+        if: steps.cluster.outputs.status == 'ACTIVE'
+        run: |
           kubectl set image deployment/kubeops-api kubeops-api=$ECR_REGISTRY/kubeops-api:$IMAGE_TAG -n kubeintel
           kubectl set image deployment/kubeops-ui kubeops-ui=$ECR_REGISTRY/kubeops-ui:$IMAGE_TAG -n kubeintel
           kubectl rollout status deployment/kubeops-api -n kubeintel
           kubectl rollout status deployment/kubeops-ui -n kubeintel
-
