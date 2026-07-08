@@ -138,6 +138,8 @@ kubectl apply -f kubernetes/
 
 The GitHub Actions pipeline runs pytest, builds the Docker images, pushes them to AWS ECR, deploys to EKS, and then checks that the rollout is healthy.
 
+**A note on the deploy stage and cost:** the EKS cluster is not kept running 24/7 - I tear it down when I'm not actively using it, so the project doesn't burn AWS spend idling. The deploy job first checks whether `kubeintel-cluster` is ACTIVE: if it is, the pipeline deploys and verifies the rollout as usual; if the cluster is offline, the deploy steps are skipped cleanly instead of failing the run. Tests and image builds still run on every push, so the pipeline stays green and meaningful either way.
+
 ## Kubernetes setup
 
 On the cluster the deployments use a Horizontal Pod Autoscaler, liveness and readiness probes, rolling updates, pod anti-affinity, Kubernetes Secrets, and non-root containers.
