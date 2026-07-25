@@ -93,7 +93,7 @@ KubeIntel-AI-Platform/
 Clone the repo and set up the environment file:
 
 ```bash
-git clone https://github.com/krishnakala987-byte/KubeIntel-AI-Platform.git
+git clone https://github.com/krishnakala987-byte/KubeIntel-AI-Platform
 cd KubeIntel-AI-Platform
 cp .env.example .env
 ```
